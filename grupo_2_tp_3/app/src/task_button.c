@@ -57,32 +57,15 @@
 
 /********************** internal data declaration ****************************/
 
-ao_led_even_t ao_led_event_red = (ao_led_even_t) {
+typedef enum {
 
-	.led_port = LED_RED_PORT,
-	.led_pin = LED_RED_PIN,
-	.led_state = AO_LED_EVENT_ON,
-	.led_name = "LED RED",
+	LOW_PRIORITY_E = 1,
+	MEDIUM_PRIRORIRY = 2,
+	HIGHT_PRIORITY_E = 3,
 
-};
+	NULL_PRIORITY_E = 0,
 
-ao_led_even_t ao_led_event_green = (ao_led_even_t) {
-
-	.led_port = LED_GREEN_PORT,
-	.led_pin = LED_GREEN_PIN,
-	.led_state = AO_LED_EVENT_ON,
-	.led_name = "LED GREEN",
-
-};
-
-ao_led_even_t ao_led_event_blue = (ao_led_even_t) {
-
-	.led_port = LED_BLUE_PORT,
-	.led_pin = LED_BLUE_PIN,
-	.led_state = AO_LED_EVENT_ON,
-	.led_name = "LED BLUE",
-
-};
+} priority_e;
 
 /********************** internal functions declaration ***********************/
 
@@ -148,10 +131,6 @@ void task_button(void* argument)
   while(true) {
 
 	op_result_e result = OP_ERR;
-	ao_ui_even_t ao_ui_event = { 0 };
-
-	ao_ui_event.ao = &ao_led;
-	ao_ui_event.handler = task_led_handler;
 
     GPIO_PinState button_state;
     button_state = HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN);
@@ -163,23 +142,26 @@ void task_button(void* argument)
       case BUTTON_TYPE_NONE:
         break;
       case BUTTON_TYPE_PULSE:
-        LOGGER_INFO("button pulse");
+        LOGGER_INFO("button pulse <---");
 
         ao_ui_event.msg = (void*)&ao_led_event_red;
+        ao_ui_event.priority = HIGHT_PRIORITY_E;
 
         process = true;
         break;
       case BUTTON_TYPE_SHORT:
-        LOGGER_INFO("button short");
+        LOGGER_INFO("button short <---");
 
         ao_ui_event.msg = (void*)&ao_led_event_green;
+        ao_ui_event.priority = MEDIUM_PRIRORIRY;
 
         process = true;
         break;
       case BUTTON_TYPE_LONG:
-        LOGGER_INFO("button long");
+        LOGGER_INFO("button long <---");
 
         ao_ui_event.msg = (void*)&ao_led_event_blue;
+        ao_ui_event.priority = LOW_PRIORITY_E;
 
         process = true;
         break;
@@ -190,7 +172,7 @@ void task_button(void* argument)
 
     if (true == process) {
 
-    	result = ao_send_msg (&ao_ui, (void*) &ao_ui_event);
+    	result = ao_send_msg (&ao_ui, (void*) &ao_ui_event, NULL_PRIORITY_E);
 
     }
 

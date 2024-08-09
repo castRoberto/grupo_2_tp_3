@@ -40,7 +40,7 @@
 
 /********************** macros and definitions *******************************/
 
-#define UI_QUEUE_LEN				  (15u)
+#define UI_QUEUE_LEN				  (10u)
 #define UI_QUEUE_SIZE_EVEN			  (sizeof (ao_ui_even_t))
 #define UI_TASK_PRIORITY			  (1u)
 
@@ -48,18 +48,30 @@
 
 /********************** internal functions declaration ***********************/
 
+static op_result_e ao_ui_init (void);
+
 /********************** internal functions definition ************************/
 
 /********************** internal data definition *****************************/
 
 /********************** external data definition *****************************/
 
+
+// Specific active object
 ao_t ao_ui = (ao_t) {
 
-	.event_queue_h = NULL,
+	// Queue:
+	.use_priority_queue = false,
 	.event_queue_len = UI_QUEUE_LEN,
-	.event_size = UI_QUEUE_SIZE_EVEN,
-	.queue_name = "AO UI queue",
+
+		// Priority Queue
+		.priority_queue_h = NULL,
+		.priority_queue_memory = NULL,
+
+		// FIFO Queue
+		.event_queue_h = NULL,
+		.event_size = UI_QUEUE_SIZE_EVEN,
+		.queue_name = "AO UI queue",
 
 		// Thread
 	.task_name = "AO UI task",
@@ -68,6 +80,7 @@ ao_t ao_ui = (ao_t) {
 	.stack_size = configMINIMAL_STACK_SIZE,
 
 		/* Process */
+	.init = ao_ui_init,
 	.handler = NULL,
 
 	.run = false,
@@ -76,13 +89,22 @@ ao_t ao_ui = (ao_t) {
 };
 
 
+/********************** internal functions definition ***********************/
+
+static op_result_e ao_ui_init (void) {
+
+	return OP_OK;
+
+}
+
+
 /********************** external functions definition ************************/
 
 void task_ui_handler (void* msg) {
 
 	ao_ui_even_t* ao_ui_event = (ao_ui_even_t*) msg;
 
-	op_result_e result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg);
+	op_result_e result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg, ao_ui_event->priority);
 
 	if (OP_OK != result) {
 
@@ -98,7 +120,7 @@ void task_ui_handler (void* msg) {
 
 			}
 
-			result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg);
+			result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg, ao_ui_event->priority);
 
 			if (OP_ERR == result) {
 

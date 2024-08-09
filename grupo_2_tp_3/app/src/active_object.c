@@ -58,9 +58,30 @@ static void _task (void *parameters) {
 
 	while (1) {
 
-		if (pdPASS == xQueueReceive(ao->event_queue_h, msg, portMAX_DELAY)) {
+		LOGGER_INFO("[_task]: %s", ao->task_name);
 
-			LOGGER_INFO("[_task]: %s", ao->task_name);
+		bool msg_valid = false;
+
+		if (ao->use_priority_queue) {
+
+			if (!pq_is_empty (ao->priority_queue_h)) {
+
+				memcpy ((void*)msg, pq_extract_max (ao->priority_queue_h), ao->event_size);
+
+				msg_valid = true;
+
+			}
+
+		} else {
+
+			xQueueReceive (ao->event_queue_h, msg, portMAX_DELAY);
+
+			msg_valid = true;
+
+		}
+
+		if (true == msg_valid) {
+
 			ao->handler ((void*)msg);
 
 			if (true == ao->memory_friendly) {
@@ -84,10 +105,19 @@ op_result_e ao_init (ao_t* ao, handlerFunc_t handler) {
 
 	if (NULL != ao  && NULL != handler) {
 
-		ao->event_queue_h = xQueueCreate (ao->event_queue_len, ao->event_size);
-		configASSERT(NULL != ao->event_queue_h);
+		if (ao->use_priority_queue) {
 
-		vQueueAddToRegistry(ao->event_queue_h, ao->queue_name);
+			ao->priority_queue_h = pq_create (ao->priority_queue_memory, ao->event_queue_len);
+			configASSERT(NULL != ao->priority_queue_h);
+
+		} else {
+
+			ao->event_queue_h = xQueueCreate (ao->event_queue_len, ao->event_size);
+			configASSERT(NULL != ao->event_queue_h);
+
+			vQueueAddToRegistry(ao->event_queue_h, ao->queue_name);
+
+		}
 
 
 		BaseType_t status =
@@ -102,9 +132,9 @@ op_result_e ao_init (ao_t* ao, handlerFunc_t handler) {
 
 		ao->handler = handler;
 
-		ao->run = true;
+		result = ao->init ();
 
-		result = (NULL != ao->event_queue_h && pdPASS == status);
+		ao->run = true;
 
 	}
 
@@ -117,7 +147,35 @@ void ao_destroy (ao_t* ao) {
 
 	if (NULL != ao) {
 
-		if (C_EMPTY_QUEUE == uxQueueMessagesWaiting (ao->event_queue_h)) {
+		bool end_destroy = false;
+
+		if (ao->use_priority_queue) {
+
+			if (pq_is_empty (ao->priority_queue_h)) {
+
+				pq_destroy (ao->priority_queue_h);
+
+				ao->priority_queue_h = NULL;
+
+				end_destroy = true;
+
+			}
+
+		} else {
+
+			if (C_EMPTY_QUEUE == uxQueueMessagesWaiting (ao->event_queue_h)) {
+
+				vQueueDelete (ao->event_queue_h);
+
+				ao->event_queue_h = NULL;
+
+				end_destroy = true;
+
+			}
+
+		}
+
+		if (true == end_destroy) {
 
 			LOGGER_INFO("[ao_ui_destroy]: destroy %s", ao->task_name);
 
@@ -127,27 +185,30 @@ void ao_destroy (ao_t* ao) {
 
 			ao->run = false;
 
-			vQueueDelete (ao->event_queue_h);
-
-			ao->event_queue_h = NULL;
-
 			vTaskDelete (NULL);
 
 		}
-
 
 	}
 
 }
 
 
-op_result_e ao_send_msg (ao_t* ao, void* msg) {
+op_result_e ao_send_msg (ao_t* ao, void* msg, uint16_t priority) {
 
 	op_result_e result = OP_ERR;
 
-	if (NULL != ao  && NULL != msg && NULL != ao->event_queue_h) {
+	if (NULL != ao  && NULL != msg) {
 
-		result = (pdPASS == xQueueSend (ao->event_queue_h, msg, 0));
+		if (ao->use_priority_queue) {
+
+			result = (NULL != ao->priority_queue_h && pq_insert (ao->priority_queue_h, msg, priority));
+
+		} else {
+
+			result = (NULL != ao->event_queue_h && (pdPASS == xQueueSend (ao->event_queue_h, msg, 0)));
+
+		}
 
 	}
 

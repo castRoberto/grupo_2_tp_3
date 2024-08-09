@@ -32,8 +32,8 @@
  * @author : Grupo 2
  */
 
-#ifndef __AO_LED_H__
-#define __AO_LED_H__
+#ifndef __PRIORITY_QUEUE_H__
+#define __PRIORITY_QUEUE_H__
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -42,63 +42,62 @@ extern "C" {
 
 /********************** inclusions *******************************************/
 
-#include "active_object.h"
-
-/********************** macros ***********************************************/
-
-#define LED_NAME_LEN 10
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
 
 /********************** typedef **********************************************/
 
-typedef enum {
-
-	E_RED = 0,
-	E_GREEN = 1,
-	E_BLUE = 2,
-
-	E_FIRTS_LED = E_RED,
-	E_LAST_LED = E_BLUE,
-
-} led_e;
-
-/* Led state definition*/
-typedef enum {
-
-  AO_LED_EVENT_OFF = 0,
-  AO_LED_EVENT_ON = 1,
-  AO_LED_EVENT__N = 2,
-
-} ao_led_state_t;
-
-
-/* Led Active Object Message definition */
+// Structure for priority queue elements
 typedef struct {
 
-	/* Hardware */
-	GPIO_TypeDef* led_port;
-	uint32_t led_pin;
-	ao_led_state_t led_state;
-	char led_name[LED_NAME_LEN];
+    uint16_t priority;
+    void* data;
 
-} ao_led_even_t;
+} pq_node_t;
+
+
+// Structure for priority queue
+typedef struct {
+
+	pq_node_t* nodes;
+    size_t size;
+    size_t capacity;
+
+} priority_queue_t;
+
+/********************** macros ***********************************************/
+
+#define MEMORY_SIZE(queue_len)    (sizeof(priority_queue_t) + queue_len * sizeof(pq_node_t))
 
 /********************** external data declaration ****************************/
 
-extern ao_led_even_t ao_led_event_red;
-extern ao_led_even_t ao_led_event_green;
-extern ao_led_even_t ao_led_event_blue;
-
-extern ao_t ao_led;
 
 /********************** external functions declaration ***********************/
 
-void task_led_handler (void* msg);
+priority_queue_t* pq_create (void* memory_pool, size_t capacity);
+
+void pq_destroy (priority_queue_t* pq);
+
+bool pq_insert (priority_queue_t* pq, void* data, uint16_t priority);
+
+void* pq_extract_max (priority_queue_t* pq);
+
+bool pq_is_empty (priority_queue_t* pq);
+
+size_t pq_size (priority_queue_t* pq);
+
+void print_priority_queue_as_tree (priority_queue_t* pq);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __AO_LED_H__ */
+
+#endif /* __PRIORITY_QUEUE_H__ */
 /********************** end of file ******************************************/
 

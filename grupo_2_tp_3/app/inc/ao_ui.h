@@ -54,11 +54,13 @@ typedef struct {
 	ao_t* ao;
 	handlerFunc_t handler;
 	void* msg;
+	uint16_t priority;
 
 } ao_ui_even_t;
 
 /********************** external data declaration ****************************/
 
+extern ao_ui_even_t ao_ui_event;
 extern ao_t ao_ui;
 
 /********************** external functions declaration ***********************/

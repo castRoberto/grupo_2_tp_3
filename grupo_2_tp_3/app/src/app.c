@@ -44,12 +44,13 @@
 #include "task_led.h"
 #include "ao_led.h"
 #include "ao_ui.h"
+#include "priority_queue.h"
 
 /********************** macros and definitions *******************************/
 
 
 /********************** internal data declaration ****************************/
-
+static uint8_t memory_pq[MEMORY_SIZE(10)];
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
@@ -57,11 +58,51 @@
 /********************** external data declaration *****************************/
 
 TaskHandle_t task_button_h;
+ao_ui_even_t ao_ui_event;
 
 /********************** external functions definition ************************/
 void app_init(void) {
 
-	ao_init (&ao_ui, task_ui_handler);
+	void* val;
+	int ans = 0;
+
+	int a = 8;
+	int b = 12;
+	int c = 2;
+	int d = 5;
+	int e = 45;
+
+	priority_queue_t* pq = pq_create(memory_pq, 10);
+
+	pq_insert(pq, (void*) &a, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &b, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &c, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &d, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &e, 2);	print_priority_queue_as_tree (pq);
+
+	val = (int*) pq_extract_max(pq);
+	ans = *(int*)val;
+	val = (int*) pq_extract_max(pq);
+	ans = *(int*)val;
+	val = (int*) pq_extract_max(pq);
+	ans = *(int*)val;
+	val = (int*) pq_extract_max(pq);
+	ans = *(int*)val;
+	val = (int*) pq_extract_max(pq);
+	ans = *(int*)val;
+
+	op_result_e result = ao_init (&ao_ui, task_ui_handler);
+
+	if (OP_ERR == result) {
+
+		LOGGER_INFO("[app_init]: Cannot create ui");
+
+	}
+
+	configASSERT(OP_OK == result);
+
+	ao_ui_event.ao = &ao_led;
+	ao_ui_event.handler = task_led_handler;
 
 	BaseType_t status;
 

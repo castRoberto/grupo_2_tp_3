@@ -44,6 +44,7 @@
 #include "logger.h"
 #include "dwt.h"
 #include "ao_led.h"
+#include "priority_queue.h"
 
 /********************** macros and definitions *******************************/
 
@@ -52,23 +53,72 @@
 #define LED_QUEUE_LEN				  (10u)
 #define LED_QUEUE_SIZE_EVEN			  (sizeof (ao_led_even_t))
 #define LED_TASK_PRIORITY			  (1u)
-#define LED_MS_DELAY				  (2500u)
+#define LED_MS_DELAY				  (5000u)
 
 /********************** internal data declaration ****************************/
 
+static uint8_t ao_led_pq_memory[MEMORY_SIZE(LED_QUEUE_LEN)];
+
 /********************** internal functions declaration ***********************/
+
+static op_result_e ao_led_init (void);
 
 /********************** internal data definition *****************************/
 
 /********************** external data definition *****************************/
 
+// Events to process
+ao_led_even_t ao_led_event_red = (ao_led_even_t) {
 
+	.led_port = LED_RED_PORT,
+	.led_pin = LED_RED_PIN,
+	.led_state = AO_LED_EVENT_ON,
+	.led_name = "LED RED",
+
+};
+
+ao_led_even_t ao_led_event_green = (ao_led_even_t) {
+
+	.led_port = LED_GREEN_PORT,
+	.led_pin = LED_GREEN_PIN,
+	.led_state = AO_LED_EVENT_ON,
+	.led_name = "LED GREEN",
+
+};
+
+ao_led_even_t ao_led_event_blue = (ao_led_even_t) {
+
+	.led_port = LED_BLUE_PORT,
+	.led_pin = LED_BLUE_PIN,
+	.led_state = AO_LED_EVENT_ON,
+	.led_name = "LED BLUE",
+
+};
+
+static ao_led_even_t* events[] = {
+
+	&ao_led_event_red,
+	&ao_led_event_green,
+	&ao_led_event_blue
+
+};
+
+
+// Specific active object
 ao_t ao_led = (ao_t) {
 
-	.event_queue_h = NULL,
+	// Queue:
+	.use_priority_queue = true,
 	.event_queue_len = LED_QUEUE_LEN,
-	.event_size = LED_QUEUE_SIZE_EVEN,
-	.queue_name = "AO LED queue",
+
+		// Priority queue
+		.priority_queue_h = NULL,
+		.priority_queue_memory = (void*)ao_led_pq_memory,
+
+		// FIFO Queue
+		.event_queue_h = NULL,
+		.event_size = LED_QUEUE_SIZE_EVEN,
+		.queue_name = "AO LED queue",
 
 		// Thread
 	.task_name = "AO LED task",
@@ -77,6 +127,7 @@ ao_t ao_led = (ao_t) {
 	.stack_size = configMINIMAL_STACK_SIZE,
 
 		/* Process */
+	.init = ao_led_init,
 	.handler = NULL,
 
 	.run = false,
@@ -85,6 +136,18 @@ ao_t ao_led = (ao_t) {
 };
 
 /********************** internal functions definition ************************/
+
+static op_result_e ao_led_init (void) {
+
+	for (led_e led = E_FIRTS_LED; led <= E_LAST_LED; led++) {
+
+		HAL_GPIO_WritePin (events[led]->led_port, events[led]->led_pin, AO_LED_EVENT_OFF);
+
+	}
+
+	return OP_OK;
+
+}
 
 /********************** external functions definition ************************/
 

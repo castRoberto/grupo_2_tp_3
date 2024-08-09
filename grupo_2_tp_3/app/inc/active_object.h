@@ -51,6 +51,7 @@ extern "C" {
 #include "board.h"
 #include "logger.h"
 #include "dwt.h"
+#include "priority_queue.h"
 
 /********************** macros ***********************************************/
 
@@ -61,11 +62,14 @@ typedef enum {
 	OP_ERR = 0,
 	OP_OK = 1,
 
+	OP_UNKNOW = 2,
+
 } op_result_e;
 
 
 /* Function pointer handler */
-typedef void (*handlerFunc_t)(void* event);
+typedef op_result_e (*initFunc_t) (void);
+typedef void (*handlerFunc_t) (void* event);
 
 /* Active Object definition */
 typedef struct {
@@ -74,11 +78,18 @@ typedef struct {
 	bool run;
 	bool memory_friendly;
 
-	// Queue
-	QueueHandle_t event_queue_h;
+	// Queues
+	bool use_priority_queue;
 	uint16_t event_queue_len;
-	size_t event_size;
-	char queue_name[configMAX_TASK_NAME_LEN];
+
+		// priority queue
+		priority_queue_t* priority_queue_h;
+		void* priority_queue_memory;
+
+		// FIFO Queue
+		QueueHandle_t event_queue_h;
+		size_t event_size;
+		char queue_name[configMAX_TASK_NAME_LEN];
 
 	// Thread
 	char task_name[configMAX_TASK_NAME_LEN];
@@ -87,6 +98,7 @@ typedef struct {
 	uint16_t stack_size;
 
 	/* Process */
+	initFunc_t init;
 	handlerFunc_t handler;
 
 } ao_t;
@@ -99,7 +111,7 @@ op_result_e ao_init (ao_t* ao, handlerFunc_t handler);
 
 void ao_destroy (ao_t* ao);
 
-op_result_e ao_send_msg (ao_t* ao, void* msg);
+op_result_e ao_send_msg (ao_t* ao, void* msg, uint16_t priority);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
