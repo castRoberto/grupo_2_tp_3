@@ -58,7 +58,7 @@ typedef struct {
 
 /********************** macros ***********************************************/
 
-#define SAFE_MEMORY_SIZE    sizeof (thread_safe_priority_queue_t)
+#define SAFE_MEMORY_SIZE(queue_len) sizeof (thread_safe_priority_queue_t) + MEMORY_SIZE(queue_len)
 
 /********************** external data declaration ****************************/
 

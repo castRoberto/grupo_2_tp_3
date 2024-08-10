@@ -53,11 +53,11 @@
 #define LED_QUEUE_LEN				  (10u)
 #define LED_QUEUE_SIZE_EVEN			  (sizeof (ao_led_even_t))
 #define LED_TASK_PRIORITY			  (1u)
-#define LED_MS_DELAY				  (7000u)
+#define LED_MS_DELAY				  (10000u)
 
 /********************** internal data declaration ****************************/
 
-static uint8_t ao_led_pq_memory [SAFE_MEMORY_SIZE + MEMORY_SIZE(LED_QUEUE_LEN)];
+static uint8_t ao_led_pq_memory [SAFE_MEMORY_SIZE(LED_QUEUE_LEN)];
 
 /********************** internal functions declaration ***********************/
 
