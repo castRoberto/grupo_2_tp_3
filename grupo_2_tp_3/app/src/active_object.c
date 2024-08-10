@@ -64,9 +64,11 @@ static void _task (void *parameters) {
 
 		if (ao->use_priority_queue) {
 
-			if (!pq_is_empty (ao->priority_queue_h)) {
+			if (!pq_is_empty_safe (ao->safe_priority_queue_h)) {
 
-				memcpy ((void*)msg, pq_extract_max (ao->priority_queue_h), ao->event_size);
+				memcpy ((void*)msg, pq_extract_max_safe (ao->safe_priority_queue_h), ao->event_size);
+
+				pq_print_priority_queue_safe (ao->safe_priority_queue_h);
 
 				msg_valid = true;
 
@@ -107,15 +109,15 @@ op_result_e ao_init (ao_t* ao, handlerFunc_t handler) {
 
 		if (ao->use_priority_queue) {
 
-			ao->priority_queue_h = pq_create (ao->priority_queue_memory, ao->event_queue_len);
-			configASSERT(NULL != ao->priority_queue_h);
+			ao->safe_priority_queue_h = pq_create_safe (ao->priority_queue_memory, ao->event_queue_len);
+			configASSERT(NULL != ao->safe_priority_queue_h);
 
 		} else {
 
 			ao->event_queue_h = xQueueCreate (ao->event_queue_len, ao->event_size);
 			configASSERT(NULL != ao->event_queue_h);
 
-			vQueueAddToRegistry(ao->event_queue_h, ao->queue_name);
+			vQueueAddToRegistry (ao->event_queue_h, ao->queue_name);
 
 		}
 
@@ -151,11 +153,11 @@ void ao_destroy (ao_t* ao) {
 
 		if (ao->use_priority_queue) {
 
-			if (pq_is_empty (ao->priority_queue_h)) {
+			if (pq_is_empty_safe (ao->safe_priority_queue_h)) {
 
-				pq_destroy (ao->priority_queue_h);
+				pq_destroy_safe (ao->safe_priority_queue_h);
 
-				ao->priority_queue_h = NULL;
+				ao->safe_priority_queue_h = NULL;
 
 				end_destroy = true;
 
@@ -202,7 +204,9 @@ op_result_e ao_send_msg (ao_t* ao, void* msg, uint16_t priority) {
 
 		if (ao->use_priority_queue) {
 
-			result = (NULL != ao->priority_queue_h && pq_insert (ao->priority_queue_h, msg, priority));
+			result = (NULL != ao->safe_priority_queue_h && pq_insert_safe (ao->safe_priority_queue_h, msg, priority));
+
+			pq_print_priority_queue_safe (ao->safe_priority_queue_h);
 
 		} else {
 

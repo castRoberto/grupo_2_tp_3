@@ -50,7 +50,7 @@
 
 
 /********************** internal data declaration ****************************/
-static uint8_t memory_pq[MEMORY_SIZE(10)];
+//static uint8_t memory_pq[MEMORY_SIZE(10)];
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
@@ -63,6 +63,8 @@ ao_ui_even_t ao_ui_event;
 /********************** external functions definition ************************/
 void app_init(void) {
 
+	/*
+
 	void* val;
 	int ans = 0;
 
@@ -74,22 +76,24 @@ void app_init(void) {
 
 	priority_queue_t* pq = pq_create(memory_pq, 10);
 
-	pq_insert(pq, (void*) &a, 2);	print_priority_queue_as_tree (pq);
-	pq_insert(pq, (void*) &b, 2);	print_priority_queue_as_tree (pq);
-	pq_insert(pq, (void*) &c, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &a, 12);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &b, 1);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &c, 1);	print_priority_queue_as_tree (pq);
 	pq_insert(pq, (void*) &d, 2);	print_priority_queue_as_tree (pq);
-	pq_insert(pq, (void*) &e, 2);	print_priority_queue_as_tree (pq);
+	pq_insert(pq, (void*) &e, 22);	print_priority_queue_as_tree (pq);
 
-	val = (int*) pq_extract_max(pq);
+	val = (int*) pq_extract_max(pq);	print_priority_queue_as_tree (pq);
 	ans = *(int*)val;
-	val = (int*) pq_extract_max(pq);
+	val = (int*) pq_extract_max(pq);	print_priority_queue_as_tree (pq);
 	ans = *(int*)val;
-	val = (int*) pq_extract_max(pq);
+	val = (int*) pq_extract_max(pq);	print_priority_queue_as_tree (pq);
 	ans = *(int*)val;
-	val = (int*) pq_extract_max(pq);
+	val = (int*) pq_extract_max(pq);	print_priority_queue_as_tree (pq);
 	ans = *(int*)val;
-	val = (int*) pq_extract_max(pq);
+	val = (int*) pq_extract_max(pq);	print_priority_queue_as_tree (pq);
 	ans = *(int*)val;
+
+	*/
 
 	op_result_e result = ao_init (&ao_ui, task_ui_handler);
 

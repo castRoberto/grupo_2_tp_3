@@ -44,7 +44,7 @@
 #include "logger.h"
 #include "dwt.h"
 #include "ao_led.h"
-#include "priority_queue.h"
+#include "thread_safe_priority_queue.h"
 
 /********************** macros and definitions *******************************/
 
@@ -53,11 +53,11 @@
 #define LED_QUEUE_LEN				  (10u)
 #define LED_QUEUE_SIZE_EVEN			  (sizeof (ao_led_even_t))
 #define LED_TASK_PRIORITY			  (1u)
-#define LED_MS_DELAY				  (5000u)
+#define LED_MS_DELAY				  (7000u)
 
 /********************** internal data declaration ****************************/
 
-static uint8_t ao_led_pq_memory[MEMORY_SIZE(LED_QUEUE_LEN)];
+static uint8_t ao_led_pq_memory [SAFE_MEMORY_SIZE + MEMORY_SIZE(LED_QUEUE_LEN)];
 
 /********************** internal functions declaration ***********************/
 
@@ -112,7 +112,7 @@ ao_t ao_led = (ao_t) {
 	.event_queue_len = LED_QUEUE_LEN,
 
 		// Priority queue
-		.priority_queue_h = NULL,
+		.safe_priority_queue_h = NULL,
 		.priority_queue_memory = (void*)ao_led_pq_memory,
 
 		// FIFO Queue

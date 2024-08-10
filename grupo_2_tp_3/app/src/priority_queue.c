@@ -109,13 +109,29 @@ static void _swap (priority_queue_t* pq, size_t i, size_t j) {
 
 }
 
+
+static bool _should_update_by_order (priority_queue_t* pq, size_t current_largest, size_t candidate) {
+
+	return (pq->nodes[candidate].priority == pq->nodes[current_largest].priority &&
+	        pq->nodes[candidate].insertion_index < pq->nodes[current_largest].insertion_index);
+
+}
+
+
+static bool _check_update_largest_node (priority_queue_t* pq, size_t current_largest, size_t candidate) {
+
+	return (pq->nodes[candidate].priority > pq->nodes[current_largest].priority ||
+			_should_update_by_order (pq, current_largest, candidate));
+
+}
+
 static void _max_heapify (priority_queue_t* pq, size_t index) {
 
 	size_t child_left = _get_left (index);
 	size_t child_right = _get_right (index);
 	size_t largest;
 
-	if (child_left < pq->size && pq->nodes[child_left].priority > pq->nodes[index].priority) {
+	if (child_left < pq->size && _check_update_largest_node (pq, index, child_left)) {
 
 		largest = child_left;
 
@@ -125,7 +141,7 @@ static void _max_heapify (priority_queue_t* pq, size_t index) {
 
 	}
 
-	if (child_right < pq->size && pq->nodes[child_right].priority > pq->nodes[largest].priority) {
+	if (child_right < pq->size && _check_update_largest_node (pq, largest, child_right)) {
 
 		largest = child_right;
 
@@ -147,7 +163,7 @@ static void _increase_priority (priority_queue_t* pq, size_t index, int16_t prio
 
 		pq->nodes[index].priority = priority;
 
-		while (index > 0 && pq->nodes[_get_parent(index)].priority < pq->nodes[index].priority) {
+		while (index > 0 && _check_update_largest_node (pq, _get_parent(index), index)) {
 
 			size_t parent = _get_parent(index);
 
@@ -174,6 +190,7 @@ priority_queue_t* pq_create (void* memory_pool, size_t capacity) {
 		// Initialize the queue
 		pq->nodes = (pq_node_t*)((char*)memory_pool + sizeof(priority_queue_t));
 		pq->size = 0;
+		pq->next_insertion_index = 0;
 		pq->capacity = capacity;
 
 	}
@@ -198,9 +215,10 @@ bool pq_insert (priority_queue_t* pq, void* data, uint16_t priority) {
 		if (pq->size != pq->capacity) {
 
 			pq->nodes[pq->size].data = data;
-			pq->nodes[pq->size].priority = 0;
+			pq->nodes[pq->size].priority = 0; // - inf
+			pq->nodes[pq->size].insertion_index = pq->next_insertion_index++;
 
-			_increase_priority(pq, pq->size, priority);
+			_increase_priority (pq, pq->size, priority);
 
 			pq->size++;
 
@@ -228,7 +246,7 @@ void* pq_extract_max (priority_queue_t* pq) {
 			pq->nodes[0] = pq->nodes[pq->size - 1];
 			pq->size--;
 
-			_max_heapify(pq, 0);
+			_max_heapify (pq, 0);
 
 		}
 
@@ -268,55 +286,63 @@ size_t pq_size (priority_queue_t* pq) {
 }
 
 
-void print_priority_queue_as_tree (priority_queue_t* pq) {
+void pq_print_priority_queue (priority_queue_t* pq) {
 
-	uint16_t levels = _calculate_level (pq->size);
+	if (NULL != pq) {
 
-	uint16_t current_level = 0;
-	size_t first_node_in_level = 0;
-	size_t last_node_in_level = 0;
-	uint16_t space_between_nodes = 0;
-	uint16_t offset_spaces = 0;
+		uint16_t levels = _calculate_level (pq->size);
 
-
-    printf("Priority Queue as Tree:\n\n");
-
-    for (size_t i = 1; i <= pq->size; i++) {
-
-    	current_level = _calculate_level (i);
-
-    	first_node_in_level = _power_of_two (current_level);
-
-    	last_node_in_level = 2 * first_node_in_level - 1;
-
-    	if (i == first_node_in_level) {
-
-    		offset_spaces = _power_of_two (levels - current_level); // 2^(l - n)
-
-    		printf ("%*s%d", offset_spaces, " ", pq->nodes[i-1].priority);
-
-    		fflush (stdout);
-
-    	} else {
-
-    		space_between_nodes = (2 * offset_spaces) - 1;
-
-    		printf ("%*s%d", space_between_nodes, " ", pq->nodes[i-1].priority);
-
-    		fflush (stdout);
-
-    	}
+		uint16_t current_level = 0;
+		size_t first_node_in_level = 0;
+		size_t last_node_in_level = 0;
+		uint16_t space_between_nodes = 0;
+		uint16_t offset_spaces = 0;
 
 
-    	if (i == last_node_in_level || i == pq->size) {
+		printf("Priority Queue as Tree:\n\n");
 
-    		printf("\n");
+		for (size_t i = 1; i <= pq->size; i++) {
 
-    	}
+			current_level = _calculate_level (i);
 
-    }
+			first_node_in_level = _power_of_two (current_level);
 
-    printf("\n");
+			last_node_in_level = 2 * first_node_in_level - 1;
+
+			if (i == first_node_in_level) {
+
+				offset_spaces = _power_of_two (levels - current_level); // 2^(l - n)
+
+				printf ("%*s%d", offset_spaces, " ", pq->nodes[i-1].priority);
+
+				fflush (stdout);
+
+			} else {
+
+				space_between_nodes = (2 * offset_spaces) - 1;
+
+				printf ("%*s%d", space_between_nodes, " ", pq->nodes[i-1].priority);
+
+				fflush (stdout);
+
+			}
+
+
+			if (i == last_node_in_level || i == pq->size) {
+
+				printf("\n");
+
+			}
+
+		}
+
+		printf("\n");
+
+	} else {
+
+		printf("Queue empty or NULL");
+
+	}
 
 }
 

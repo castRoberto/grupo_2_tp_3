@@ -32,8 +32,8 @@
  * @author : Grupo 2
  */
 
-#ifndef __PRIORITY_QUEUE_H__
-#define __PRIORITY_QUEUE_H__
+#ifndef __THREAD_SAFE_PRIORITY_QUEUE_H__
+#define __THREAD_SAFE_PRIORITY_QUEUE_H__
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -42,64 +42,47 @@ extern "C" {
 
 /********************** inclusions *******************************************/
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
-#include <stdio.h>
+#include "main.h"
+#include "cmsis_os.h"
+#include "priority_queue.h"
 
 /********************** typedef **********************************************/
 
-// Structure for priority queue elements
+// Structure for safe priority queue
 typedef struct {
 
-    uint16_t priority;
-    size_t insertion_index;
-    void* data;
+	priority_queue_t* pq;
+	SemaphoreHandle_t mutex;
 
-} pq_node_t;
-
-
-// Structure for priority queue
-typedef struct {
-
-	pq_node_t* nodes;
-    size_t size;
-    size_t capacity;
-    size_t next_insertion_index;
-
-} priority_queue_t;
+} thread_safe_priority_queue_t;
 
 /********************** macros ***********************************************/
 
-#define MEMORY_SIZE(queue_len)    (sizeof(priority_queue_t) + queue_len * sizeof(pq_node_t))
+#define SAFE_MEMORY_SIZE    sizeof (thread_safe_priority_queue_t)
 
 /********************** external data declaration ****************************/
 
 
 /********************** external functions declaration ***********************/
 
-priority_queue_t* pq_create (void* memory_pool, size_t capacity);
+thread_safe_priority_queue_t* pq_create_safe (void* memory_pool, size_t capacity);
 
-void pq_destroy (priority_queue_t* pq);
+void pq_destroy_safe (thread_safe_priority_queue_t* safe_pq);
 
-bool pq_insert (priority_queue_t* pq, void* data, uint16_t priority); // O(log_2(n))
+bool pq_insert_safe (thread_safe_priority_queue_t* safe_pq, void* data, uint16_t priority);
 
-void* pq_extract_max (priority_queue_t* pq); // O(log_2(n))
+void* pq_extract_max_safe (thread_safe_priority_queue_t* safe_pq);
 
-bool pq_is_empty (priority_queue_t* pq);
+bool pq_is_empty_safe (thread_safe_priority_queue_t* safe_pq);
 
-size_t pq_size (priority_queue_t* pq);
+size_t pq_size_safe (thread_safe_priority_queue_t* safe_pq);
 
-void pq_print_priority_queue (priority_queue_t* pq);
+void pq_print_priority_queue_safe (thread_safe_priority_queue_t* safe_pq);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-
-#endif /* __PRIORITY_QUEUE_H__ */
+#endif /* __THREAD_SAFE_PRIORITY_QUEUE_H__ */
 /********************** end of file ******************************************/
-

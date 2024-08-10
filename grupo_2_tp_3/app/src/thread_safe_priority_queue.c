@@ -34,110 +34,129 @@
 
 /********************** inclusions *******************************************/
 
-
-#include "ao_ui.h"
-#include "active_object.h"
+#include "thread_safe_priority_queue.h"
 
 /********************** macros and definitions *******************************/
 
-#define UI_QUEUE_LEN				  (10u)
-#define UI_QUEUE_SIZE_EVEN			  (sizeof (ao_ui_even_t))
-#define UI_TASK_PRIORITY			  (1u)
 
 /********************** internal data declaration ****************************/
 
+
 /********************** internal functions declaration ***********************/
 
-static op_result_e ao_ui_init (void);
-
-/********************** internal functions definition ************************/
-
 /********************** internal data definition *****************************/
+
 
 /********************** external data definition *****************************/
 
 
-// Specific active object
-ao_t ao_ui = (ao_t) {
-
-	// Queue:
-	.use_priority_queue = false,
-	.event_queue_len = UI_QUEUE_LEN,
-
-		// Priority Queue
-		.safe_priority_queue_h = NULL,
-		.priority_queue_memory = NULL,
-
-		// FIFO Queue
-		.event_queue_h = NULL,
-		.event_size = UI_QUEUE_SIZE_EVEN,
-		.queue_name = "AO UI queue",
-
-		// Thread
-	.task_name = "AO UI task",
-	.thread_h = NULL,
-	.priority = UI_TASK_PRIORITY,
-	.stack_size = configMINIMAL_STACK_SIZE,
-
-		/* Process */
-	.init = ao_ui_init,
-	.handler = NULL,
-
-	.run = false,
-	.memory_friendly = false,
-
-};
-
-
-/********************** internal functions definition ***********************/
-
-static op_result_e ao_ui_init (void) {
-
-	return OP_OK;
-
-}
+/********************** internal functions definition ************************/
 
 
 /********************** external functions definition ************************/
 
-void task_ui_handler (void* msg) {
+thread_safe_priority_queue_t* pq_create_safe (void* memory_pool, size_t capacity) {
 
-	ao_ui_even_t* ao_ui_event = (ao_ui_even_t*) msg;
+	thread_safe_priority_queue_t* safe_pq = NULL;
 
-	op_result_e result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg, ao_ui_event->priority);
+	if (memory_pool != NULL && capacity != 0) {
 
-	if (OP_OK != result) {
+		safe_pq = (thread_safe_priority_queue_t*)memory_pool;
 
-		if (false == ao_ui_event->ao->run) {
+		void* memory_pool_pq = (void*)((char*)memory_pool + sizeof(thread_safe_priority_queue_t));
 
-			LOGGER_INFO("[task_ui_handler]: AO init");
+		// Initialize the safe queue
+		safe_pq->mutex = xSemaphoreCreateMutex ();
+		configASSERT(NULL != safe_pq->mutex);
 
-			result = ao_init (ao_ui_event->ao, ao_ui_event->handler);
+		safe_pq->pq = pq_create(memory_pool_pq, capacity);
 
-			if (OP_ERR == result) {
+	}
 
-				LOGGER_INFO("[task_ui_handler]: Cannot create more resources");
+	return safe_pq;
 
-			}
+}
 
-			result = ao_send_msg (ao_ui_event->ao, ao_ui_event->msg, ao_ui_event->priority);
+void pq_destroy_safe (thread_safe_priority_queue_t* safe_pq) {
 
-			if (OP_ERR == result) {
+	if (NULL != safe_pq) {
 
-				LOGGER_INFO("[task_ui_handler]: Null message or missized queue");
+		vSemaphoreDelete (safe_pq->mutex);
 
-			}
-
-		} else {
-
-			LOGGER_INFO("[task_ui_handler]: AO QUEUE saturated");
-
-		}
+		safe_pq->mutex = NULL;
 
 	}
 
 }
 
 
+bool pq_insert_safe (thread_safe_priority_queue_t* safe_pq, void* data, uint16_t priority) {
+
+	bool success = false;
+
+	if (NULL != safe_pq) {
+
+		if (pdTRUE == xSemaphoreTake (safe_pq->mutex, portMAX_DELAY)) {
+
+			success = pq_insert (safe_pq->pq, data, priority);
+
+			xSemaphoreGive (safe_pq->mutex);
+
+		}
+
+	}
+
+
+	return success;
+
+}
+
+
+void* pq_extract_max_safe (thread_safe_priority_queue_t* safe_pq) {
+
+	void* data = NULL;
+
+	if (NULL != safe_pq) {
+
+		if (pdTRUE == xSemaphoreTake (safe_pq->mutex, portMAX_DELAY)) {
+
+			data = pq_extract_max (safe_pq->pq);
+
+			xSemaphoreGive(safe_pq->mutex);
+
+		}
+
+	}
+
+	return data;
+
+}
+
+bool pq_is_empty_safe (thread_safe_priority_queue_t* safe_pq) {
+
+	return pq_is_empty (safe_pq->pq);
+
+}
+
+size_t pq_size_safe (thread_safe_priority_queue_t* safe_pq) {
+
+	return pq_size(safe_pq->pq);
+
+}
+
+
+void pq_print_priority_queue_safe (thread_safe_priority_queue_t* safe_pq) {
+
+	if (NULL != safe_pq) {
+
+		portENTER_CRITICAL();
+
+		pq_print_priority_queue(safe_pq->pq);
+
+		portEXIT_CRITICAL();
+
+	}
+
+}
 
 /********************** end of file ******************************************/

@@ -51,7 +51,7 @@ extern "C" {
 #include "board.h"
 #include "logger.h"
 #include "dwt.h"
-#include "priority_queue.h"
+#include "thread_safe_priority_queue.h"
 
 /********************** macros ***********************************************/
 
@@ -83,7 +83,7 @@ typedef struct {
 	uint16_t event_queue_len;
 
 		// priority queue
-		priority_queue_t* priority_queue_h;
+		thread_safe_priority_queue_t* safe_priority_queue_h;
 		void* priority_queue_memory;
 
 		// FIFO Queue
