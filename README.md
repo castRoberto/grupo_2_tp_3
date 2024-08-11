@@ -17,8 +17,8 @@
 [foro](https://campusposgrado.fi.uba.ar/mod/forum/view.php?id=10780)
 
 ## Referentes teoricos
-- Simulador online de cola de prioridad (https://visualgo.net/en/heap)
-- Introducción a los algoritmos, Thomas Cormen (https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf)
-- Sitio web (https://www.baeldung.com/cs/priority-queue)
+- [Simulador online de cola de prioridad](https://visualgo.net/en/heap)
+- [Introducción a los algoritmos, Thomas Cormen](https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf)
+- [Sitio web](https://www.baeldung.com/cs/priority-queue)
 
 
